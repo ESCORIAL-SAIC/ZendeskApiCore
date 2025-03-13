@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using ZendeskApiCore.Models;
 
 namespace ZendeskApiCore.Controllers
@@ -9,7 +10,6 @@ namespace ZendeskApiCore.Controllers
     [ApiController]
     public class TipoTecnicoController(ESCORIALContext context) : ControllerBase
     {
-        private readonly ESCORIALContext _context = context;
 
         // GET: api/TipoTecnico
         /// <summary>
@@ -22,11 +22,14 @@ namespace ZendeskApiCore.Controllers
         /// <response code="401">Unauthorized. No se ha indicado o es incorrecto el Token JWT de acceso.</response>
         /// <response code="200">OK. Devuelve el listado de objetos solicitado.</response>
         /// <response code="403">Forbidden. Autorización denegada. No cuenta con los permisos suficientes.</response>
+        /// <response code="404">NotFound. No se ha encontrado el objeto solicitado.</response>
         [Authorize(Policy = "RequireUserRole")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<TipoTecnico>>> GetTipoTecnico()
         {
-            var tiposTecnico = await _context.TiposTecnico.ToListAsync();
+            var tiposTecnico = await context.TiposTecnico.ToListAsync();
+            if (tiposTecnico is null || tiposTecnico.IsNullOrEmpty())
+                return NotFound();
             return tiposTecnico;
         }
 
@@ -47,11 +50,11 @@ namespace ZendeskApiCore.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<TipoTecnico>> GetTipoTecnico(Guid? id)
         {
-            var tipoTecnico = await _context.TiposTecnico.FirstOrDefaultAsync(x => x.Id.Equals(id));
+            if (id is null || id == Guid.Empty)
+                return BadRequest("ID tipo tecnico invalido.");
+            var tipoTecnico = await context.TiposTecnico.FirstOrDefaultAsync(x => x.Id.Equals(id));
             if (tipoTecnico == null)
-            {
                 return NotFound();
-            }
             return tipoTecnico;
         }
     }
