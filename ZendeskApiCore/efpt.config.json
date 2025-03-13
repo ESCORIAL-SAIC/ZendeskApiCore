@@ -1,0 +1,80 @@
+﻿{
+   "CodeGenerationMode": 5,
+   "ContextClassName": "ESCORIALContext",
+   "ContextNamespace": null,
+   "FilterSchemas": false,
+   "IncludeConnectionString": true,
+   "ModelNamespace": null,
+   "OutputContextPath": null,
+   "OutputPath": "Models",
+   "PreserveCasingWithRegex": true,
+   "ProjectRootNamespace": "ZendeskApiCore",
+   "Schemas": null,
+   "SelectedHandlebarsLanguage": 2,
+   "SelectedToBeGenerated": 0,
+   "T4TemplatePath": null,
+   "Tables": [
+      {
+         "Name": "public.producto",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.tipoproducto",
+         "ObjectType": 0
+      },
+      {
+         "Name": "web.items_reclamowebzendesk",
+         "ObjectType": 0
+      },
+      {
+         "Name": "web.reclamowebzendesk",
+         "ObjectType": 0
+      },
+      {
+         "Name": "web.api_login",
+         "ObjectType": 3
+      },
+      {
+         "Name": "web.api_zendeskreclamosweb_problemas",
+         "ObjectType": 3
+      },
+      {
+         "Name": "web.api_zendeskreclamosweb_provincias",
+         "ObjectType": 3
+      },
+      {
+         "Name": "web.api_zendeskreclamosweb_tecnicos",
+         "ObjectType": 3
+      },
+      {
+         "Name": "web.api_zendeskreclamosweb_tipostecnico",
+         "ObjectType": 3
+      }
+   ],
+   "UiHint": null,
+   "UncountableWords": null,
+   "UseAsyncStoredProcedureCalls": true,
+   "UseBoolPropertiesWithoutDefaultSql": false,
+   "UseDatabaseNames": false,
+   "UseDatabaseNamesForRoutines": true,
+   "UseDateOnlyTimeOnly": true,
+   "UseDbContextSplitting": false,
+   "UseDecimalDataAnnotationForSprocResult": true,
+   "UseFluentApiOnly": false,
+   "UseHandleBars": false,
+   "UseHierarchyId": false,
+   "UseInflector": false,
+   "UseLegacyPluralizer": false,
+   "UseManyToManyEntity": false,
+   "UseNoDefaultConstructor": false,
+   "UseNoNavigations": false,
+   "UseNoObjectFilter": false,
+   "UseNodaTime": false,
+   "UseNullableReferences": false,
+   "UsePrefixNavigationNaming": false,
+   "UseSchemaFolders": false,
+   "UseSchemaNamespaces": false,
+   "UseSpatial": false,
+   "UseT4": false,
+   "UseT4Split": false
+}
