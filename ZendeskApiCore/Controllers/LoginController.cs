@@ -55,7 +55,7 @@ namespace ZendeskApiCore.Controllers
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error en el método Login para el usuario {Usuario}", usuarioLogin?.User);
-                return StatusCode(500, "Ocurrió un error inesperado. Inténtelo nuevamente más tarde.");
+                return StatusCode(500, "Ocurrió un error inesperado. Contacte a sistemas.");
             }
         }
 
