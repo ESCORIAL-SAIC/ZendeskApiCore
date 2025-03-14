@@ -42,7 +42,7 @@ namespace ZendeskApiCore.Controllers
         /// <response code="401">Unauthorized. No se ha indicado o es incorrecto el Token JWT de acceso.</response>
         /// <response code="404">NotFound. No se ha encontrado el objeto solicitado.</response>
         /// <response code="403">Forbidden. Autorización denegada. No cuenta con los permisos suficientes.</response>
-        /// <response code="400">Error en la solicitud enviada.</response>
+        /// <response code="400">BadRequest. Error en la solicitud enviada.</response>
         [Authorize(Policy = "RequireUserRole")]
         [HttpGet("{id}")]
         public async Task<ActionResult<Tecnico>> GetProblema(Guid id)
