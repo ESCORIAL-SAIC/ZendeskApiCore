@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using ZendeskApiCore.Models;
 
 namespace ZendeskApiCore.Controllers
@@ -9,7 +10,6 @@ namespace ZendeskApiCore.Controllers
     [ApiController]
     public class TecnicoController(ESCORIALContext context) : ControllerBase
     {
-        private readonly ESCORIALContext _context = context;
 
         // GET: api/Tecnico
         /// <summary>
@@ -17,15 +17,18 @@ namespace ZendeskApiCore.Controllers
         /// </summary>
         /// <remarks>Requiere autenticación. Nivel usuario.</remarks>
         /// <returns>Una colección de técnicos.</returns>
-        /// <response code="401">Unauthorized. No se ha indicado o es incorrecto el Token JWT de acceso.</response>              
-        /// <response code="200">OK. Devuelve el listado de objetos solicitado.</response>   
-        /// <response code="403">Forbidden. Autorización denegada. No cuenta con los permisos suficientes.</response>   
+        /// <response code="401">Unauthorized. No se ha indicado o es incorrecto el Token JWT de acceso.</response>
+        /// <response code="200">OK. Devuelve el listado de objetos solicitado.</response>
+        /// <response code="403">Forbidden. Autorización denegada. No cuenta con los permisos suficientes.</response>
+        /// <response code="404">NotFound. No se encontró el objeto solicitado.</response>
         [Authorize(Policy = "RequireUserRole")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Tecnico>>> GetTecnico()
         {
-            var tecnicos = await _context.Tecnicos.ToListAsync();
-            return tecnicos;
+            var tecnicos = await context.Tecnicos.ToListAsync();
+            if (tecnicos is null || tecnicos.IsNullOrEmpty())
+                return NotFound();
+            return Ok(tecnicos);
         }
 
         // GET: api/Tecnico/5
@@ -35,20 +38,21 @@ namespace ZendeskApiCore.Controllers
         /// <remarks>Requiere autenticación. Nivel usuario.</remarks>
         /// <param name="id">ID del técnico.</param>
         /// <returns>El problema encontrado.</returns>
-        /// <response code="200">OK. Devuelve el objeto solicitado.</response>   
+        /// <response code="200">OK. Devuelve el objeto solicitado.</response>
         /// <response code="401">Unauthorized. No se ha indicado o es incorrecto el Token JWT de acceso.</response>
-        /// <response code="404">NotFound. No se ha encontrado el objeto solicitado.</response>  
-        /// <response code="403">Forbidden. Autorización denegada. No cuenta con los permisos suficientes.</response>   
+        /// <response code="404">NotFound. No se ha encontrado el objeto solicitado.</response>
+        /// <response code="403">Forbidden. Autorización denegada. No cuenta con los permisos suficientes.</response>
+        /// <response code="400">Error en la solicitud enviada.</response>
         [Authorize(Policy = "RequireUserRole")]
         [HttpGet("{id}")]
-        public async Task<ActionResult<Tecnico>> GetProblema(Guid? id)
+        public async Task<ActionResult<Tecnico>> GetProblema(Guid id)
         {
-            var tecnico = await _context.Tecnicos.FirstOrDefaultAsync(x => x.Id.Equals(id));
-            if (tecnico == null)
-            {
+            if (id == Guid.Empty)
+                return BadRequest();
+            var tecnico = await context.Tecnicos.FirstOrDefaultAsync(x => x.Id.Equals(id));
+            if (tecnico is null)
                 return NotFound();
-            }
-            return tecnico;
+            return Ok(tecnico);
         }
     }
 }
