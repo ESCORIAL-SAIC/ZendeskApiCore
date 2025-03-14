@@ -8,7 +8,7 @@ namespace ZendeskApiCore.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class TipoTecnicoController(ESCORIALContext context) : ControllerBase
+    public class TipoTecnicoController(ESCORIALContext context, ILogger<LoginController> logger) : ControllerBase
     {
 
         // GET: api/TipoTecnico
@@ -23,14 +23,23 @@ namespace ZendeskApiCore.Controllers
         /// <response code="200">OK. Devuelve el listado de objetos solicitado.</response>
         /// <response code="403">Forbidden. Autorización denegada. No cuenta con los permisos suficientes.</response>
         /// <response code="404">NotFound. No se ha encontrado el objeto solicitado.</response>
+        /// <response code="500">InternalServerError. Error interno del servidor. Comunicarse con sistemas.</response>
         [Authorize(Policy = "RequireUserRole")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<TipoTecnico>>> GetTipoTecnico()
         {
-            var tiposTecnico = await context.TiposTecnico.ToListAsync();
-            if (tiposTecnico is null || tiposTecnico.IsNullOrEmpty())
-                return NotFound();
-            return Ok(tiposTecnico);
+            try
+            {
+                var tiposTecnico = await context.TiposTecnico.ToListAsync();
+                if (tiposTecnico is null || tiposTecnico.IsNullOrEmpty())
+                    return NotFound();
+                return Ok(tiposTecnico);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error en el método GetTipoTecnico");
+                return StatusCode(500, "Ocurrió un error inesperado. Contacte a sistemas.");
+            }
         }
 
         // GET: api/TipoTecnico/5
@@ -47,16 +56,25 @@ namespace ZendeskApiCore.Controllers
         /// <response code="404">NotFound. No se ha encontrado el objeto solicitado.</response>
         /// <response code="403">Forbidden. Autorización denegada. No cuenta con los permisos suficientes.</response>
         /// <response code="400">BadRequest. Error en la solicitud enviada.</response>
+        /// <response code="500">InternalServerError. Error interno del servidor. Comunicarse con sistemas.</response>
         [Authorize(Policy = "RequireUserRole")]
         [HttpGet("{id}")]
         public async Task<ActionResult<TipoTecnico>> GetTipoTecnico(Guid id)
         {
-            if (id == Guid.Empty)
-                return BadRequest("No se proporcionó un ID válido.");
-            var tipoTecnico = await context.TiposTecnico.FirstOrDefaultAsync(x => x.Id.Equals(id));
-            if (tipoTecnico == null)
-                return NotFound();
-            return Ok(tipoTecnico);
+            try
+            {
+                if (id == Guid.Empty)
+                    return BadRequest("No se proporcionó un ID válido.");
+                var tipoTecnico = await context.TiposTecnico.FirstOrDefaultAsync(x => x.Id.Equals(id));
+                if (tipoTecnico == null)
+                    return NotFound();
+                return Ok(tipoTecnico);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error en el método GetTipoTecnico(id)");
+                return StatusCode(500, "Ocurrió un error inesperado. Contacte a sistemas.");
+            }
         }
     }
 }

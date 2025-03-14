@@ -8,7 +8,7 @@ namespace ZendeskApiCore.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProvinciaController(ESCORIALContext context) : ControllerBase
+    public class ProvinciaController(ESCORIALContext context, ILogger<LoginController> logger) : ControllerBase
     {
 
         // GET: api/Provincia
@@ -21,14 +21,23 @@ namespace ZendeskApiCore.Controllers
         /// <response code="200">OK. Devuelve el listado de objetos solicitado.</response>
         /// <response code="403">Forbidden. Autorización denegada. No cuenta con los permisos suficientes.</response>
         /// <response code="404">NotFound. No se encontró el objeto solicitado.</response>
-        [Authorize(Policy = "RequireUserRole")]
+        /// <response code="500">InternalServerError. Error interno del servidor. Comunicarse con sistemas.</response>
         [HttpGet]
+        [Authorize(Policy = "RequireUserRole")]
         public async Task<ActionResult<IEnumerable<Provincia>>> GetProvincia()
         {
-            var provincias = await context.Provincias.ToListAsync();
-            if (provincias is null || provincias.IsNullOrEmpty())
-                return NotFound();
-            return Ok(provincias);
+            try
+            {
+                var provincias = await context.Provincias.ToListAsync();
+                if (provincias is null || provincias.IsNullOrEmpty())
+                    return NotFound();
+                return Ok(provincias);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error en el método GetProvincia");
+                return StatusCode(500, "Ocurrió un error inesperado. Contacte a sistemas.");
+            }
         }
 
         // GET: api/Provincia/5
@@ -43,16 +52,25 @@ namespace ZendeskApiCore.Controllers
         /// <response code="404">NotFound. No se ha encontrado el objeto solicitado.</response>
         /// <response code="403">Forbidden. Autorización denegada. No cuenta con los permisos suficientes.</response>
         /// <response code="400">BadRequest. Error en la solicitud enviada.</response>
-        [Authorize(Policy = "RequireUserRole")]
+        /// <response code="500">InternalServerError. Error interno del servidor. Comunicarse con sistemas.</response>
         [HttpGet("{id}")]
+        [Authorize(Policy = "RequireUserRole")]
         public async Task<ActionResult<Provincia>> GetProvincia(Guid id)
         {
-            if (id == Guid.Empty)
-                return BadRequest("No se proporcionó un ID válido.");
-            var provincia = await context.Provincias.FirstOrDefaultAsync(x => x.Id.Equals(id));
-            if (provincia is null)
-                return NotFound();
-            return Ok(provincia);
+            try
+            {
+                if (id == Guid.Empty)
+                    return BadRequest("No se proporcionó un ID válido.");
+                var provincia = await context.Provincias.FirstOrDefaultAsync(x => x.Id.Equals(id));
+                if (provincia is null)
+                    return NotFound();
+                return Ok(provincia);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error en el método GetProvincia(id)");
+                return StatusCode(500, "Ocurrió un error inesperado. Contacte a sistemas.");
+            }
         }
     }
 }
