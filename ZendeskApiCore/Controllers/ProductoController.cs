@@ -2,34 +2,38 @@ using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using ZendeskApiCore.Models;
 
 namespace ZendeskApiCore.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProductoController : ControllerBase
+    public class ProductoController(ESCORIALContext context, IMapper mapper) : ControllerBase
     {
-        private readonly ESCORIALContext _context;
-        private readonly IMapper _mapper;
-
-        public ProductoController(ESCORIALContext context, IMapper mapper)
-        {
-            _context = context;
-            _mapper = mapper;
-        }
 
         // GET: api/Producto
+        /// <summary>
+        /// Obtiene todos los productos.
+        /// </summary>
+        /// <remarks>Requiere autenticación. Nivel usuario.</remarks>
+        /// <returns>Un listado de productos.</returns>
+        /// <response code="200">OK. Devuelve el objeto solicitado.</response>
+        /// <response code="401">Unauthorized. No se ha indicado o es incorrecto el Token JWT de acceso.</response>
+        /// <response code="404">NotFound. No se ha encontrado el objeto solicitado.</response>
+        /// <response code="403">Forbidden. Autorización denegada. No cuenta con los permisos suficientes.</response>
+        /// <response code="400">BadRequest. Error en la solicitud.</response>
         [HttpGet]
+        [Authorize(Policy = "RequireUserRole")]
         public async Task<ActionResult<IEnumerable<ProductoDto>>> GetProductos()
         {
-            var productos = await _context.Productos
+            var productos = await context.Productos
                 .Where(producto => producto.ActiveStatus == 0)
-                .Join(_context.Segmentos,
+                .Join(context.Segmentos,
                     producto => producto.SegmentoId,
                     segmento => segmento.Id,
                     (producto, segmento) => new { producto, segmento })
-                .Join(_context.TiposProducto,
+                .Join(context.TiposProducto,
                     productoSegmento => productoSegmento.segmento.Segmento1Id,
                     tipoProducto => tipoProducto.Id,
                     (productoSegmento, tipoProducto) => new { productoSegmento, tipoProducto })
@@ -42,21 +46,37 @@ namespace ZendeskApiCore.Controllers
                         TipoProducto = productoSegmentoTipo.tipoProducto,
                     })
                 .ToListAsync();
-            return productos;
+            if (productos is null || productos.IsNullOrEmpty())
+                return NotFound();
+            return Ok(productos);
         }
 
         // GET: api/Producto/5
+        /// <summary>
+        /// Obtiene un producto a partir de su ID.
+        /// </summary>
+        /// <param name="id">ID del producto a buscar.</param>
+        /// <remarks>Requiere autenticación. Nivel usuario.</remarks>
+        /// <returns>Un listado de productos.</returns>
+        /// <response code="200">OK. Devuelve el objeto solicitado.</response>
+        /// <response code="401">Unauthorized. No se ha indicado o es incorrecto el Token JWT de acceso.</response>
+        /// <response code="404">NotFound. No se ha encontrado el objeto solicitado.</response>
+        /// <response code="403">Forbidden. Autorización denegada. No cuenta con los permisos suficientes.</response>
+        /// <response code="400">BadRequest. Error en la solicitud.</response>
         [HttpGet("{id}")]
+        [Authorize(Policy = "RequireUserRole")]
         public async Task<ActionResult<ProductoDto>> GetProducto(Guid id)
         {
-            var producto = await _context.Productos
+            if (id == Guid.Empty)
+                return BadRequest();
+            var producto = await context.Productos
                 .Where(producto => producto.ActiveStatus == 0
                                    && producto.Id == id)
-                .Join(_context.Segmentos,
+                .Join(context.Segmentos,
                     producto => producto.SegmentoId,
                     segmento => segmento.Id,
                     (producto, segmento) => new { producto, segmento })
-                .Join(_context.TiposProducto,
+                .Join(context.TiposProducto,
                     productoSegmento => productoSegmento.segmento.Segmento1Id,
                     tipoProducto => tipoProducto.Id,
                     (productoSegmento, tipoProducto) => new { productoSegmento, tipoProducto })
@@ -69,25 +89,36 @@ namespace ZendeskApiCore.Controllers
                         TipoProducto = productoSegmentoTipo.tipoProducto,
                     })
                 .FirstOrDefaultAsync();
-            if (producto == null)
-            {
+            if (producto is null)
                 return NotFound();
-            }
-
-            return producto;
+            return Ok(producto);
         }
 
         //GET: api/producto/tipo/5
+        /// <summary>
+        /// Obtiene un listado de productos por tipo.
+        /// </summary>
+        /// <param name="idTipo">ID del tipo de producto a buscar.</param>
+        /// <remarks>Requiere autenticación. Nivel usuario.</remarks>
+        /// <returns>Un listado de productos.</returns>
+        /// <response code="200">OK. Devuelve el objeto solicitado.</response>
+        /// <response code="401">Unauthorized. No se ha indicado o es incorrecto el Token JWT de acceso.</response>
+        /// <response code="404">NotFound. No se ha encontrado el objeto solicitado.</response>
+        /// <response code="403">Forbidden. Autorización denegada. No cuenta con los permisos suficientes.</response>
+        /// <response code="400">BadRequest. Error en la solicitud.</response>
         [HttpGet("tipo/{idTipo}")]
+        [Authorize(Policy = "RequireUserRole")]
         public async Task<ActionResult<IEnumerable<ProductoDto>>> GetProductoTipo(Guid idTipo)
         {
-            var productos = await _context.Productos
+            if (idTipo == Guid.Empty)
+                return BadRequest();
+            var productos = await context.Productos
                 .Where(producto => producto.ActiveStatus == 0)
-                .Join(_context.Segmentos,
+                .Join(context.Segmentos,
                     producto => producto.SegmentoId,
                     segmento => segmento.Id,
                     (producto, segmento) => new { producto, segmento })
-                .Join(_context.TiposProducto,
+                .Join(context.TiposProducto,
                     productoSegmento => productoSegmento.segmento.Segmento1Id,
                     tipoProducto => tipoProducto.Id,
                     (productoSegmento, tipoProducto) => new { productoSegmento, tipoProducto })
@@ -101,7 +132,9 @@ namespace ZendeskApiCore.Controllers
                     })
                 .Where(producto => producto.TipoProducto.Id == idTipo)
                 .ToListAsync();
-            return productos;
+            if (productos is null || productos.IsNullOrEmpty())
+                return NotFound();
+            return Ok(productos);
         }
 
         //POST: api/producto
@@ -137,16 +170,16 @@ namespace ZendeskApiCore.Controllers
                 codigoProducto = "TERMOTANQUE";
             else
                 return BadRequest("Tipo de producto incorrecto.");
-            var etiqueta = await _context.Etiquetas
+            var etiqueta = await context.Etiquetas
                 .FirstOrDefaultAsync(e => e.Numero == etiquetaDto.Numero && e.ProductoTipoCodigo == codigoProducto);
             if (etiqueta is null)
                 return NotFound();
-            var producto = await _context.Productos
+            var producto = await context.Productos
                 .FirstOrDefaultAsync(p => p.Id == etiqueta.ProductoId);
             if (producto is null)
                 return NotFound();
-            etiqueta.Producto = _mapper.Map<ProductoDto>(producto);
-            etiqueta.Producto.TipoProducto = await _context.TiposProducto
+            etiqueta.Producto = mapper.Map<ProductoDto>(producto);
+            etiqueta.Producto.TipoProducto = await context.TiposProducto
                 .FirstOrDefaultAsync(p => p.Codigo == etiquetaDto.ProductoTipo.Codigo);
             if (etiqueta.Producto.TipoProducto is null)
                 return NotFound();

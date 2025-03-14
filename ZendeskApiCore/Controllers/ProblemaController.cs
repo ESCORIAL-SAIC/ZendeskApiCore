@@ -28,7 +28,7 @@ namespace ZendeskApiCore.Controllers
             var problemas = await context.Problemas.ToListAsync();
             if (problemas == null || problemas.IsNullOrEmpty())
                 return NotFound();
-            return problemas;
+            return Ok(problemas);
         }
 
         // GET: api/Problema/5
@@ -52,7 +52,7 @@ namespace ZendeskApiCore.Controllers
             var problema = await context.Problemas.FirstOrDefaultAsync(x => x.Id.Equals(id));
             if (problema == null)
                 return NotFound();
-            return problema;
+            return Ok(problema);
         }
     }
 }
