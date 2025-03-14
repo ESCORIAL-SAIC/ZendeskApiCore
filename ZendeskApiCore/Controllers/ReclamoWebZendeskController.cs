@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using ZendeskApiCore.Models;
 
 namespace ZendeskApiCore.Controllers
@@ -11,10 +12,8 @@ namespace ZendeskApiCore.Controllers
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
-    public class ReclamoWebZendeskController(ESCORIALContext context, IMapper mapper) : ControllerBase
+    public class ReclamoWebZendeskController(ESCORIALContext context, IMapper mapper, ILogger<LoginController> logger) : ControllerBase
     {
-        private readonly ESCORIALContext _context = context;
-        private readonly IMapper _mapper = mapper;
 
         // GET: api/ReclamoWebZendesk
         /// <summary>
@@ -25,17 +24,29 @@ namespace ZendeskApiCore.Controllers
         /// <response code="401">Unauthorized. No se ha indicado o es incorrecto el Token JWT de acceso.</response>
         /// <response code="200">OK. Devuelve el listado de objetos solicitado.</response>
         /// <response code="403">Forbidden. Autorización denegada. No cuenta con los permisos suficientes.</response>
+        /// <response code="404">NotFound. No se encontró el objeto solicitado.</response>
+        /// <response code="500">InternalServerError. Error interno del servidor. Comunicarse con sistemas.</response>
         [Authorize(Policy = "RequireUserRole")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ReclamoWebZendesk>>> GetReclamoWebZendesk()
         {
-            var reclamos = await _context.ReclamosWebZendesk.ToListAsync();
-            foreach (var reclamo in reclamos)
+            try
             {
-                var itemsReclamo = await _context.ItemsReclamoWebZendesk.Where(x => x.ReclamoId.Equals(reclamo.Id.ToString())).ToListAsync();
-                reclamo.ItemsReclamoWebZendesk = itemsReclamo;
+                var reclamos = await context.ReclamosWebZendesk.ToListAsync();
+                if (reclamos is null || reclamos.IsNullOrEmpty())
+                    return NotFound();
+                foreach (var reclamo in reclamos)
+                {
+                    var itemsReclamo = await context.ItemsReclamoWebZendesk.Where(x => x.ReclamoId.Equals(reclamo.Id.ToString())).ToListAsync();
+                    reclamo.ItemsReclamoWebZendesk = itemsReclamo;
+                }
+                return Ok(reclamos);
             }
-            return reclamos;
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error en el método GetReclamoWebZendesk");
+                return StatusCode(500, "Ocurrió un error inesperado. Contacte a sistemas.");
+            }
         }
 
         // GET: api/ReclamoWebZendesk/5
@@ -49,20 +60,27 @@ namespace ZendeskApiCore.Controllers
         /// <response code="401">Unauthorized. No se ha indicado o es incorrecto el Token JWT de acceso.</response>
         /// <response code="404">NotFound. No se ha encontrado el objeto solicitado.</response>
         /// <response code="403">Forbidden. Autorización denegada. No cuenta con los permisos suficientes.</response>
+        /// <response code="400">BadRequest. Error en la solicitud enviada.</response>
+        /// <response code="500">InternalServerError. Error interno del servidor. Comunicarse con sistemas.</response>
         [Authorize(Policy = "RequireUserRole")]
         [HttpGet("{id}")]
-        public async Task<ActionResult<ReclamoWebZendesk>> GetReclamoWebZendesk(int? id)
+        public async Task<ActionResult<ReclamoWebZendesk>> GetReclamoWebZendesk(int id)
         {
-            var reclamoWebZendesk = await _context.ReclamosWebZendesk.FindAsync(id);
-
-            if (reclamoWebZendesk == null)
+            try
             {
-                return NotFound();
+                if (id < 1)
+                    return BadRequest("No se proporcionó un ID válido.");
+                var reclamoWebZendesk = await context.ReclamosWebZendesk.FindAsync(id);
+                if (reclamoWebZendesk is null)
+                    return NotFound();
+                reclamoWebZendesk.ItemsReclamoWebZendesk = await context.ItemsReclamoWebZendesk.Where(x => x.ReclamoId.Equals(reclamoWebZendesk.Id.ToString())).ToListAsync();
+                return Ok(reclamoWebZendesk);
             }
-
-            reclamoWebZendesk.ItemsReclamoWebZendesk = await _context.ItemsReclamoWebZendesk.Where(x => x.ReclamoId.Equals(reclamoWebZendesk.Id.ToString())).ToListAsync();
-
-            return reclamoWebZendesk;
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error en el método GetReclamoWebZendesk(id)");
+                return StatusCode(500, "Ocurrió un error inesperado. Contacte a sistemas.");
+            }
         }
 
         // PUT: api/ReclamoWebZendesk/5
@@ -78,42 +96,51 @@ namespace ZendeskApiCore.Controllers
         /// <response code="400">BadRequest. No se ha actualizado el objeto en la BD. Formato del objeto incorrecto o Id inexistente.</response>
         /// <response code="404">NotFound. No se encontró el reclamo a actualizar.</response>
         /// <response code="403">Forbidden. Autorización denegada. No cuenta con los permisos suficientes.</response>
+        /// <response code="500">InternalServerError. Error interno del servidor. Comunicarse con sistemas.</response>
         [Authorize(Policy = "RequireAdministratorRole")]
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutReclamoWebZendesk(int? id, [FromBody] ReclamoWebZendeskDto reclamoWebZendeskDto)
+        public async Task<IActionResult> PutReclamoWebZendesk(int id, [FromBody] ReclamoWebZendeskDto reclamoWebZendeskDto)
         {
-            if (id == null)
-                return BadRequest("ID no proporcionado.");
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-            var reclamoWebZendeskInDb = await _context.ReclamosWebZendesk
-                .FirstOrDefaultAsync(r => r.Id == id);
-            if (reclamoWebZendeskInDb == null)
-                return NotFound();
-            await using (var transaction = await _context.Database.BeginTransactionAsync())
+            try
             {
-                try
+                if (id < 1)
+                    return BadRequest();
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+                var reclamoWebZendeskInDb = await context.ReclamosWebZendesk
+                    .FirstOrDefaultAsync(r => r.Id == id);
+                if (reclamoWebZendeskInDb is null)
+                    return NotFound();
+                await using (var transaction = await context.Database.BeginTransactionAsync())
                 {
-                    _mapper.Map(reclamoWebZendeskDto, reclamoWebZendeskInDb);
-                    _context.Entry(reclamoWebZendeskInDb).State = EntityState.Modified;
-                    await _context.SaveChangesAsync();
-                    await transaction.CommitAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    await transaction.RollbackAsync();
+                    try
+                    {
+                        mapper.Map(reclamoWebZendeskDto, reclamoWebZendeskInDb);
+                        context.Entry(reclamoWebZendeskInDb).State = EntityState.Modified;
+                        await context.SaveChangesAsync();
+                        await transaction.CommitAsync();
+                    }
+                    catch (DbUpdateConcurrencyException)
+                    {
+                        await transaction.RollbackAsync();
 
-                    if (!ReclamoWebZendeskExists(id.Value))
-                        return NotFound();
-                    throw;
+                        if (!ReclamoWebZendeskExists(id))
+                            return NotFound();
+                        throw;
+                    }
+                    catch (Exception)
+                    {
+                        await transaction.RollbackAsync();
+                        throw;
+                    }
                 }
-                catch (Exception)
-                {
-                    await transaction.RollbackAsync();
-                    throw;
-                }
+                return NoContent();
             }
-            return NoContent();
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error en el método PutReclamoWebZendesk(id, reclamoWebZendeskDto)");
+                return StatusCode(500, "Ocurrió un error inesperado. Contacte a sistemas.");
+            }
         }
 
         // POST: api/ReclamoWebZendesk
@@ -131,36 +158,45 @@ namespace ZendeskApiCore.Controllers
         /// <response code="400">BadRequest. No se ha creado el objeto en la BD. Formato del objeto incorrecto.</response>
         /// <response code="500">InternalServerError. Se produjo un error al crear el reclamo.</response>
         /// <response code="403">Forbidden. Autorización denegada. No cuenta con los permisos suficientes.</response>
+        /// <response code="500">InternalServerError. Error interno del servidor. Comunicarse con sistemas.</response>
         [Authorize(Policy = "RequireAdministratorRole")]
         [HttpPost]
         public async Task<ActionResult<ReclamoWebZendesk>> PostReclamoWebZendesk([FromBody] ReclamoWebZendeskDto reclamoWebZendeskDto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-            var reclamoWebZendesk = _mapper.Map<ReclamoWebZendesk>(reclamoWebZendeskDto);
-            reclamoWebZendesk.CreatedAt = DateTime.Now;
-            reclamoWebZendesk.FechaHoraIngresoPagina = DateTime.Now;
-            await using (var transaction = await _context.Database.BeginTransactionAsync())
+            try
             {
-                try
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+                var reclamoWebZendesk = mapper.Map<ReclamoWebZendesk>(reclamoWebZendeskDto);
+                reclamoWebZendesk.CreatedAt = DateTime.Now;
+                reclamoWebZendesk.FechaHoraIngresoPagina = DateTime.Now;
+                await using (var transaction = await context.Database.BeginTransactionAsync())
                 {
-                    _context.ReclamosWebZendesk.Add(reclamoWebZendesk);
-                    await _context.SaveChangesAsync();
-                    foreach (var item in reclamoWebZendesk.ItemsReclamoWebZendesk)
+                    try
                     {
-                        item.ReclamoId = reclamoWebZendesk.Id.ToString();
-                        _context.ItemsReclamoWebZendesk.Add(item);
+                        context.ReclamosWebZendesk.Add(reclamoWebZendesk);
+                        await context.SaveChangesAsync();
+                        foreach (var item in reclamoWebZendesk.ItemsReclamoWebZendesk)
+                        {
+                            item.ReclamoId = reclamoWebZendesk.Id.ToString();
+                            context.ItemsReclamoWebZendesk.Add(item);
+                        }
+                        await context.SaveChangesAsync();
+                        await transaction.CommitAsync();
                     }
-                    await _context.SaveChangesAsync();
-                    await transaction.CommitAsync();
+                    catch (Exception)
+                    {
+                        await transaction.RollbackAsync();
+                        throw;
+                    }
                 }
-                catch (Exception ex)
-                {
-                    await transaction.RollbackAsync();
-                    return StatusCode(StatusCodes.Status500InternalServerError, $"Error al crear el reclamo.\nMessage: {ex.Message}\nStack trace: {ex.StackTrace}\nInner exception: {ex.InnerException}");
-                }
+                return CreatedAtAction("GetReclamoWebZendesk", new { id = reclamoWebZendesk.Id }, reclamoWebZendesk);
             }
-            return CreatedAtAction("GetReclamoWebZendesk", new { id = reclamoWebZendesk.Id }, reclamoWebZendesk);
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error en el método PutReclamoWebZendesk(reclamoWebZendeskDto)");
+                return StatusCode(500, "Ocurrió un error inesperado. Contacte a sistemas.");
+            }
         }
 
         // DELETE: api/ReclamoWebZendesk/5
@@ -179,38 +215,41 @@ namespace ZendeskApiCore.Controllers
         /// <response code="404">NotFound. No se encontró el elemento en la BD.</response>
         /// <response code="500">InternalServerError. Ocurrió un error al intentar eliminar el reclamo.</response>
         /// <response code="403">Forbidden. Autorización denegada. No cuenta con los permisos suficientes.</response>
+        /// <response code="500">InternalServerError. Error interno del servidor. Comunicarse con sistemas.</response>
         [Authorize(Policy = "RequireAdministratorRole")]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteReclamoWebZendesk(int? id)
+        public async Task<IActionResult> DeleteReclamoWebZendesk(int id)
         {
-            if (id == null)
-            {
-                return BadRequest("ID no proporcionado.");
-            }
-            await using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var reclamoWebZendesk = await _context.ReclamosWebZendesk.FindAsync(id);
-                if (reclamoWebZendesk == null)
+                if (id < 1)
+                    return BadRequest("No se proporcionó un ID válido.");
+                await using var transaction = await context.Database.BeginTransactionAsync();
+                try
                 {
-                    return NotFound();
+                    var reclamoWebZendesk = await context.ReclamosWebZendesk.FindAsync(id);
+                    if (reclamoWebZendesk is null)
+                        return NotFound();
+                    var itemsReclamoWebZendesk = await context.ItemsReclamoWebZendesk
+                        .Where(x => x.ReclamoId.Equals(reclamoWebZendesk.Id.ToString()))
+                        .ToListAsync();
+                    context.ReclamosWebZendesk.Remove(reclamoWebZendesk);
+                    foreach (var item in itemsReclamoWebZendesk)
+                        context.ItemsReclamoWebZendesk.Remove(item);
+                    await context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    return NoContent();
                 }
-                var itemsReclamoWebZendesk = await _context.ItemsReclamoWebZendesk
-                    .Where(x => x.ReclamoId.Equals(reclamoWebZendesk.Id.ToString()))
-                    .ToListAsync();
-                _context.ReclamosWebZendesk.Remove(reclamoWebZendesk);
-                foreach (var item in itemsReclamoWebZendesk)
+                catch (Exception)
                 {
-                    _context.ItemsReclamoWebZendesk.Remove(item);
+                    await transaction.RollbackAsync();
+                    throw;
                 }
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-                return NoContent();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                await transaction.RollbackAsync();
-                return StatusCode(StatusCodes.Status500InternalServerError, "Error al eliminar el reclamo.");
+                logger.LogError(ex, "Error en el método DeleteReclamoWebZendesk(id)");
+                return StatusCode(500, "Ocurrió un error inesperado. Contacte a sistemas.");
             }
         }
 
@@ -221,7 +260,7 @@ namespace ZendeskApiCore.Controllers
         /// <returns>True si el reclamo web existe; false en caso contrario.</returns>
         private bool ReclamoWebZendeskExists(int? id)
         {
-            return _context.ReclamosWebZendesk.Any(e => e.Id == id);
+            return context.ReclamosWebZendesk.Any(e => e.Id == id);
         }
     }
 }
