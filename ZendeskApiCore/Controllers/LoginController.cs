@@ -14,10 +14,6 @@ namespace ZendeskApiCore.Controllers
     [ApiController]
     public class LoginController(ESCORIALContext context, IConfiguration configuration, IMapper mapper) : ControllerBase
     {
-        private readonly IConfiguration _configuration = configuration;
-        private readonly ESCORIALContext _context = context;
-        private readonly IMapper _mapper = mapper;
-
         // POST: api/Login
         /// <summary>
         /// Metodo de inicio de sesión y obtención de JWT para autenticación en API Zendesk Reclamos Web.
@@ -38,13 +34,13 @@ namespace ZendeskApiCore.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
             if (usuarioLogin is null)
-                return BadRequest();
+                return BadRequest("No se proporcionó el UserLoginDto.");
             if (string.IsNullOrEmpty(usuarioLogin.User) || string.IsNullOrEmpty(usuarioLogin.Password))
                 return BadRequest("No se indicó usuario o contraseña.");
             var userInfo = await AutenticarUsuarioAsync(usuarioLogin.User, usuarioLogin.Password);
             if (userInfo != null)
             {
-                var userInfoDto = _mapper.Map<UserInfoDto>(userInfo);
+                var userInfoDto = mapper.Map<UserInfoDto>(userInfo);
                 var (token, expiration) = GenerarTokenJWT(userInfo);
                 return Ok(new { token, expirationUtc = expiration, userInfo = userInfoDto });
             }
@@ -56,16 +52,16 @@ namespace ZendeskApiCore.Controllers
 
         private async Task<Login?> AutenticarUsuarioAsync(string usuario, string password)
         {
-            var user = await _context.Login.FirstOrDefaultAsync(x => x.User.Equals(usuario) && x.Password.Equals(password));
+            var user = await context.Login.FirstOrDefaultAsync(x => x.User.Equals(usuario) && x.Password.Equals(password));
             if (user is null)
                 return null;
-            return _mapper.Map<Login>(user);
+            return mapper.Map<Login>(user);
         }
 
         private (string token, DateTime expiration) GenerarTokenJWT(Login usuarioInfo)
         {
             var _symmetricSecurityKey = new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(_configuration["JWT:ClaveSecreta"]!)
+                    Encoding.UTF8.GetBytes(configuration["JWT:ClaveSecreta"]!)
                 );
             var _signingCredentials = new SigningCredentials(
                     _symmetricSecurityKey, SecurityAlgorithms.HmacSha256
@@ -84,8 +80,8 @@ namespace ZendeskApiCore.Controllers
             };
 
             var _Payload = new JwtPayload(
-                    issuer: _configuration["JWT:Issuer"],
-                    audience: _configuration["JWT:Audience"],
+                    issuer: configuration["JWT:Issuer"],
+                    audience: configuration["JWT:Audience"],
                     claims: _Claims,
                     notBefore: DateTime.UtcNow,
                     expires: expirationUtc

@@ -52,7 +52,7 @@ namespace ZendeskApiCore.Controllers
         public async Task<ActionResult<TipoTecnico>> GetTipoTecnico(Guid id)
         {
             if (id == Guid.Empty)
-                return BadRequest();
+                return BadRequest("No se proporcionó un ID válido.");
             var tipoTecnico = await context.TiposTecnico.FirstOrDefaultAsync(x => x.Id.Equals(id));
             if (tipoTecnico == null)
                 return NotFound();

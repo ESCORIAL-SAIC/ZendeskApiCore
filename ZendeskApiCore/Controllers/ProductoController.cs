@@ -68,7 +68,7 @@ namespace ZendeskApiCore.Controllers
         public async Task<ActionResult<ProductoDto>> GetProducto(Guid id)
         {
             if (id == Guid.Empty)
-                return BadRequest();
+                return BadRequest("No se proporcionó un ID válido.");
             var producto = await context.Productos
                 .Where(producto => producto.ActiveStatus == 0
                                    && producto.Id == id)
@@ -111,7 +111,7 @@ namespace ZendeskApiCore.Controllers
         public async Task<ActionResult<IEnumerable<ProductoDto>>> GetProductoTipo(Guid idTipo)
         {
             if (idTipo == Guid.Empty)
-                return BadRequest();
+                return BadRequest("No se proporcionó un ID válido.");
             var productos = await context.Productos
                 .Where(producto => producto.ActiveStatus == 0)
                 .Join(context.Segmentos,

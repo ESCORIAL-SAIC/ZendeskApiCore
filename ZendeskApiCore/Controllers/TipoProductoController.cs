@@ -48,7 +48,7 @@ namespace ZendeskApiCore.Controllers
         public async Task<ActionResult<TipoProducto>> GetTipoProducto(Guid id)
         {
             if (id == Guid.Empty)
-                return BadRequest();
+                return BadRequest("No se proporcionó un ID válido.");
             var tipoProducto = await context.TiposProducto.FindAsync(id);
             if (tipoProducto == null)
                 return NotFound();

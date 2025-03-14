@@ -48,7 +48,7 @@ namespace ZendeskApiCore.Controllers
         public async Task<ActionResult<Provincia>> GetProvincia(Guid id)
         {
             if (id == Guid.Empty)
-                return BadRequest();
+                return BadRequest("No se proporcionó un ID válido.");
             var provincia = await context.Provincias.FirstOrDefaultAsync(x => x.Id.Equals(id));
             if (provincia is null)
                 return NotFound();

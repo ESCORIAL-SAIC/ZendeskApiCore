@@ -57,15 +57,11 @@ namespace ZendeskApiCore.Controllers
         public async Task<ActionResult<ReclamoWebZendesk>> GetReclamoWebZendesk(int id)
         {
             if (id < 1)
-                return BadRequest();
-
+                return BadRequest("No se proporcionó un ID válido.");
             var reclamoWebZendesk = await context.ReclamosWebZendesk.FindAsync(id);
-
             if (reclamoWebZendesk is null)
                 return NotFound();
-
             reclamoWebZendesk.ItemsReclamoWebZendesk = await context.ItemsReclamoWebZendesk.Where(x => x.ReclamoId.Equals(reclamoWebZendesk.Id.ToString())).ToListAsync();
-
             return Ok(reclamoWebZendesk);
         }
 
@@ -188,7 +184,7 @@ namespace ZendeskApiCore.Controllers
         public async Task<IActionResult> DeleteReclamoWebZendesk(int id)
         {
             if (id < 1)
-                return BadRequest();
+                return BadRequest("No se proporcionó un ID válido.");
             await using var transaction = await context.Database.BeginTransactionAsync();
             try
             {

@@ -48,7 +48,7 @@ namespace ZendeskApiCore.Controllers
         public async Task<ActionResult<Problema>> GetProblema(Guid id)
         {
             if (id == Guid.Empty)
-                return BadRequest();
+                return BadRequest("No se proporcionó un ID válido.");
             var problema = await context.Problemas.FirstOrDefaultAsync(x => x.Id.Equals(id));
             if (problema == null)
                 return NotFound();
