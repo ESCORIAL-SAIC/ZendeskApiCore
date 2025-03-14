@@ -30,7 +30,7 @@ namespace ZendeskApiCore.Controllers
             var tiposTecnico = await context.TiposTecnico.ToListAsync();
             if (tiposTecnico is null || tiposTecnico.IsNullOrEmpty())
                 return NotFound();
-            return tiposTecnico;
+            return Ok(tiposTecnico);
         }
 
         // GET: api/TipoTecnico/5
@@ -46,16 +46,17 @@ namespace ZendeskApiCore.Controllers
         /// <response code="401">Unauthorized. No se ha indicado o es incorrecto el Token JWT de acceso.</response>
         /// <response code="404">NotFound. No se ha encontrado el objeto solicitado.</response>
         /// <response code="403">Forbidden. Autorización denegada. No cuenta con los permisos suficientes.</response>
+        /// <response code="400">BadRequest. Error en la solicitud enviada.</response>
         [Authorize(Policy = "RequireUserRole")]
         [HttpGet("{id}")]
-        public async Task<ActionResult<TipoTecnico>> GetTipoTecnico(Guid? id)
+        public async Task<ActionResult<TipoTecnico>> GetTipoTecnico(Guid id)
         {
-            if (id is null || id == Guid.Empty)
-                return BadRequest("ID tipo tecnico invalido.");
+            if (id == Guid.Empty)
+                return BadRequest();
             var tipoTecnico = await context.TiposTecnico.FirstOrDefaultAsync(x => x.Id.Equals(id));
             if (tipoTecnico == null)
                 return NotFound();
-            return tipoTecnico;
+            return Ok(tipoTecnico);
         }
     }
 }
