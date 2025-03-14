@@ -35,6 +35,8 @@ public partial class ESCORIALContext : DbContext
     public virtual DbSet<ReclamoWebZendesk> ReclamosWebZendesk { get; set; }
     
     public virtual DbSet<TipoProducto> TiposProducto { get; set; }
+
+    public virtual DbSet<Etiqueta> Etiquetas { get; set; }
     
     public virtual DbSet<ItemTipoClasificador> ItemsTipoClasificador { get; set; }
     
@@ -87,6 +89,11 @@ public partial class ESCORIALContext : DbContext
         modelBuilder.Entity<ItemTipoClasificador>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("itemtipoclasificador_pkey"); 
+        });
+
+        modelBuilder.Entity<Etiqueta>(entity =>
+        {
+            entity.ToView("vp_etiquetas", "public");
         });
 
         modelBuilder.Entity<Segmento>(entity =>
