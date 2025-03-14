@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using ZendeskApiCore.Models;
 
 namespace ZendeskApiCore.Controllers
@@ -9,7 +10,6 @@ namespace ZendeskApiCore.Controllers
     [ApiController]
     public class ProblemaController(ESCORIALContext context) : ControllerBase
     {
-        private readonly ESCORIALContext _context = context;
 
         // GET: api/Problema
         /// <summary>
@@ -20,11 +20,14 @@ namespace ZendeskApiCore.Controllers
         /// <response code="401">Unauthorized. No se ha indicado o es incorrecto el Token JWT de acceso.</response>
         /// <response code="200">OK. Devuelve el listado de objetos solicitado.</response>
         /// <response code="403">Forbidden. Autorización denegada. No cuenta con los permisos suficientes.</response>
+        /// <response code="404">NotFound. Objeto no encontrado.</response>
         [Authorize(Policy = "RequireUserRole")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Problema>>> GetProblema()
         {
-            var problemas = await _context.Problemas.ToListAsync();
+            var problemas = await context.Problemas.ToListAsync();
+            if (problemas == null || problemas.IsNullOrEmpty())
+                return NotFound();
             return problemas;
         }
 
@@ -39,15 +42,16 @@ namespace ZendeskApiCore.Controllers
         /// <response code="401">Unauthorized. No se ha indicado o es incorrecto el Token JWT de acceso.</response>
         /// <response code="404">NotFound. No se ha encontrado el objeto solicitado.</response>
         /// <response code="403">Forbidden. Autorización denegada. No cuenta con los permisos suficientes.</response>
+        /// <response code="400">BadRequest. Error en la solicitud.</response>
         [Authorize(Policy = "RequireUserRole")]
         [HttpGet("{id}")]
-        public async Task<ActionResult<Problema>> GetProblema(Guid? id)
+        public async Task<ActionResult<Problema>> GetProblema(Guid id)
         {
-            var problema = await _context.Problemas.FirstOrDefaultAsync(x => x.Id.Equals(id));
+            if (id == Guid.Empty)
+                return BadRequest();
+            var problema = await context.Problemas.FirstOrDefaultAsync(x => x.Id.Equals(id));
             if (problema == null)
-            {
                 return NotFound();
-            }
             return problema;
         }
     }
