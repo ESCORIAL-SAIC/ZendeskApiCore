@@ -52,7 +52,7 @@ namespace ZendeskApiCore.Controllers
             var provincia = await context.Provincias.FirstOrDefaultAsync(x => x.Id.Equals(id));
             if (provincia is null)
                 return NotFound();
-            return provincia;
+            return Ok(provincia);
         }
     }
 }
