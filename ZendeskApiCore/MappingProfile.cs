@@ -1,4 +1,4 @@
-﻿using ZendeskApiCore.Models;
+using ZendeskApiCore.Models;
 using AutoMapper;
 
 namespace ZendeskApiCore

@@ -1,4 +1,4 @@
-﻿namespace ZendeskApiCore.Models;
+namespace ZendeskApiCore.Models;
 
 /// <summary>
 /// DTO para carga de datos de reclamo web en Zendesk.

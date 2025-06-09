@@ -1,4 +1,4 @@
-﻿namespace ZendeskApiCore.Models;
+namespace ZendeskApiCore.Models;
 public class UserInfoDto
 {
     public Guid? Id { get; set; }

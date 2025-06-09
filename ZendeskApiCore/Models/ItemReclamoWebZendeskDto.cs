@@ -1,4 +1,4 @@
-﻿namespace ZendeskApiCore.Models;
+namespace ZendeskApiCore.Models;
 public class ItemReclamoWebZendeskDto
 {
     public string? Serie { get; set; }

@@ -1,4 +1,4 @@
-﻿namespace ZendeskApiCore.Models;
+namespace ZendeskApiCore.Models;
 public class UserLoginDto
 {
     public string? User {  get; set; }

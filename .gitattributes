@@ -1,0 +1,8 @@
+# Fuerza LF como fin de línea para estos archivos
+*.cs text eol=lf
+*.cshtml text eol=lf
+*.js text eol=lf
+*.ts text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.sh text eol=lf
