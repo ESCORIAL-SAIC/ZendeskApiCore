@@ -29,7 +29,7 @@ public partial class ItemReclamoWebZendesk
 
     [Column("problema")]
     [StringLength(255)]
-    public string Problema { get; set; }
+    public string ProblemaId { get; set; }
 
     [Column("reclamo_id")]
     [StringLength(60)]
