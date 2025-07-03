@@ -74,6 +74,15 @@ namespace ZendeskApiCore.Controllers
                 if (reclamoWebZendesk is null)
                     return NotFound();
                 reclamoWebZendesk.ItemsReclamoWebZendesk = await context.ItemsReclamoWebZendesk.Where(x => x.ReclamoId.Equals(reclamoWebZendesk.Id.ToString())).ToListAsync();
+                var trReclamo = await context.TrReclamos
+                    .FirstOrDefaultAsync(x => x.NumeroDocumento.Equals(reclamoWebZendesk.NumeroReclamo.ToString()));
+                if (trReclamo is null)
+                    return Ok(reclamoWebZendesk);
+                var trReclamoDto = mapper.Map<TrReclamoDto>(trReclamo);
+                var flag = await context.Flags
+                    .FirstOrDefaultAsync(x => x.Id.Equals(trReclamo.FlagId));
+                trReclamoDto.Flag = flag;
+                reclamoWebZendesk.ReclamoAsociado = trReclamoDto;
                 return Ok(reclamoWebZendesk);
             }
             catch (Exception ex)

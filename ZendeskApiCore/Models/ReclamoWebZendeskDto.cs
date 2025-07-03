@@ -61,5 +61,5 @@ public partial class ReclamoWebZendeskDto
     /// Items asociados al reclamo.
     /// </summary>
     public ICollection<ItemReclamoWebZendeskDto>? ItemsReclamoWebZendesk { get; set; }
-    public TrReclamoDto ReclamoAsociado { get; set; } = new TrReclamoDto();
+    public TrReclamoDto? ReclamoAsociado { get; set; }
 }

@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ZendeskApiCore.Models
 {
-    public class TrReclamoDto
+    public partial class TrReclamoDto
     {
         public string Nombre  { get; set; }
         public string NumeroDocumento { get; set; }

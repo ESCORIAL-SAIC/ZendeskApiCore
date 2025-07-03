@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace ZendeskApiCore.Models
 {
     [Table("flag")]
-    public class Flag
+    public partial class Flag
     {
         [Key]
         [Column("id")]
