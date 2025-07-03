@@ -483,5 +483,5 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 
-appsettings.json
-ZendeskApiCore/appsettings.json
+appsettings.Development.json
+ZendeskApiCore/appsettings.Development.json
