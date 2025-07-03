@@ -91,4 +91,7 @@ public partial class ReclamoWebZendesk
     public string NumeroReclamo { get; set; }
     [NotMapped]
     public List<ItemReclamoWebZendesk> ItemsReclamoWebZendesk { get; set; }
+    [NotMapped]
+    public TrReclamoDto ReclamoAsociado { get; set; } = new TrReclamoDto();
+
 }
