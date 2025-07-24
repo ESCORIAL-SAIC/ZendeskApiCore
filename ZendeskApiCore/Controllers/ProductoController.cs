@@ -211,6 +211,33 @@ namespace ZendeskApiCore.Controllers
                 etiqueta.Producto = mapper.Map<ProductoDto>(producto);
                 etiqueta.Producto.TipoProducto = await context.TiposProducto
                     .FirstOrDefaultAsync(p => p.Codigo == etiquetaDto.ProductoTipo.Codigo);
+                var trReclamoDto = context.ItemsReclamo
+                    .GroupJoin(
+                        context.TrReclamos,
+                        item => item.PlaceOwnerId,
+                        reclamo => reclamo.Id,
+                        (item, reclamos) => new { item, reclamos }
+                    )
+                    .SelectMany(
+                        x => x.reclamos.DefaultIfEmpty(),
+                        (x, reclamo) => new { x.item, reclamo }
+                    )
+                    .GroupJoin(
+                        context.UdItemsReclamoSt,
+                        x => x.item.Id,
+                        ud => ud.BoOwnerId,
+                        (x, uds) => new { x.item, x.reclamo, uds }
+                    )
+                    .SelectMany(
+                        x => x.uds.DefaultIfEmpty(),
+                        (x, udItemReclamoSt) => new { x.item, x.reclamo, udItemReclamoSt }
+                    )
+                    .Where(x =>
+                        x.reclamo != null &&
+                        x.reclamo.BoPlaceId == new Guid("28295D31-34DE-441D-B329-DB9EDC4828A9") &&
+                        x.item.TipoTransaccionId == new Guid("9917E6DE-2C20-408C-AA20-C4B183BDAED2") &&
+                        x.udItemReclamoSt != null &&
+                        x.udItemReclamoSt.NumeroSerie == etiqueta.Numero.ToString());
                 if (etiqueta.Producto.TipoProducto is null)
                     return NotFound();
                 return Ok(etiqueta);
@@ -221,5 +248,6 @@ namespace ZendeskApiCore.Controllers
                 return StatusCode(500, "Ocurrió un error inesperado. Contacte a sistemas.");
             }
         }
+        
     }
 }
