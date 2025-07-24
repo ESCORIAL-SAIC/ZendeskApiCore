@@ -21,6 +21,7 @@ namespace ZendeskApiCore.Models
         public string Nombre { get; set; }
         [Column("flag_id")]
         public Guid FlagId { get; set; }
-
+        [Column("bo_place_id")]
+        public Guid BoPlaceId { get; set; }
     }
 }

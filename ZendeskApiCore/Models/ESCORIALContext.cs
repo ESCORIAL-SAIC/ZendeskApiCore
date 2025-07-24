@@ -42,9 +42,10 @@ public partial class ESCORIALContext : DbContext
     public virtual DbSet<ItemTipoClasificador> ItemsTipoClasificador { get; set; }
     
     public virtual DbSet<Segmento> Segmentos { get; set; }
-    
-    
-    
+    public virtual DbSet<ItemReclamo> ItemsReclamo { get; set; }
+    public virtual DbSet<UdItemReclamoSt> UdItemsReclamoSt { get; set; }
+
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {}
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -110,6 +111,16 @@ public partial class ESCORIALContext : DbContext
         modelBuilder.Entity<Segmento>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("segmento_pkey");
+        });
+
+        modelBuilder.Entity<ItemReclamo>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("itemreclamo_pkey");
+        }); 
+
+        modelBuilder.Entity<UdItemReclamoSt>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("ud_item_reclamo_st_pkey");
         });
 
         modelBuilder.Entity<ItemReclamoWebZendesk>(entity =>
