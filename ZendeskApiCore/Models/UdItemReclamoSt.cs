@@ -14,6 +14,6 @@ namespace ZendeskApiCore.Models
         [Column("bo_owner_id")]
         public Guid BoOwnerId { get; set; }
         [Column("numeroserie")]
-        public string NumeroSerie { get; set; } 
+        public int NumeroSerie { get; set; } 
     }
 }

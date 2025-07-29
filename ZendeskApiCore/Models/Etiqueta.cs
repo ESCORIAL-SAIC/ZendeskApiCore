@@ -25,5 +25,7 @@ namespace ZendeskApiCore.Models
         public string ProductoTipoCodigo { get; set; }
         [NotMapped]
         public ProductoDto Producto { get; set; }
+        [NotMapped]
+        public List<TrReclamoDto> ReclamosAsociados { get; set; } = [];
     }
 }

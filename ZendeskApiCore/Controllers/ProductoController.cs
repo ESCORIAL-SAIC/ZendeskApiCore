@@ -211,33 +211,44 @@ namespace ZendeskApiCore.Controllers
                 etiqueta.Producto = mapper.Map<ProductoDto>(producto);
                 etiqueta.Producto.TipoProducto = await context.TiposProducto
                     .FirstOrDefaultAsync(p => p.Codigo == etiquetaDto.ProductoTipo.Codigo);
-                var trReclamoDto = context.ItemsReclamo
-                    .GroupJoin(
-                        context.TrReclamos,
-                        item => item.PlaceOwnerId,
-                        reclamo => reclamo.Id,
-                        (item, reclamos) => new { item, reclamos }
-                    )
-                    .SelectMany(
-                        x => x.reclamos.DefaultIfEmpty(),
-                        (x, reclamo) => new { x.item, reclamo }
-                    )
-                    .GroupJoin(
-                        context.UdItemsReclamoSt,
-                        x => x.item.Id,
-                        ud => ud.BoOwnerId,
-                        (x, uds) => new { x.item, x.reclamo, uds }
-                    )
-                    .SelectMany(
-                        x => x.uds.DefaultIfEmpty(),
-                        (x, udItemReclamoSt) => new { x.item, x.reclamo, udItemReclamoSt }
-                    )
-                    .Where(x =>
-                        x.reclamo != null &&
-                        x.reclamo.BoPlaceId == new Guid("28295D31-34DE-441D-B329-DB9EDC4828A9") &&
-                        x.item.TipoTransaccionId == new Guid("9917E6DE-2C20-408C-AA20-C4B183BDAED2") &&
-                        x.udItemReclamoSt != null &&
-                        x.udItemReclamoSt.NumeroSerie == etiqueta.Numero.ToString());
+
+
+                var numeroSerie = etiqueta.Numero;
+                var lugarId = Guid.Parse("28295D31-34DE-441D-B329-DB9EDC4828A9");
+                var tipoTransaccionId = Guid.Parse("9917E6DE-2C20-408C-AA20-C4B183BDAED2");
+                var reclamosAsociados = (
+                    from item in context.ItemsReclamo
+                    where item.TipoTransaccionId == Guid.Parse("9917E6DE-2C20-408C-AA20-C4B183BDAED2")
+                    join reclamo in context.TrReclamos
+                        on item.PlaceOwnerId equals reclamo.Id into reclamoJoin
+                    from reclamo in reclamoJoin.DefaultIfEmpty()
+                    where reclamo.BoPlaceId == Guid.Parse("28295D31-34DE-441D-B329-DB9EDC4828A9")
+                    join ud in context.UdItemsReclamoSt
+                        on item.Id equals ud.BoOwnerId into udJoin
+                    from ud in udJoin.DefaultIfEmpty()
+                    where ud != null && ud.NumeroSerie == numeroSerie
+                    select new
+                    {
+                        item.NumeroDocumento,
+                        item.NombreTr,
+                        reclamo.Estado,
+                        reclamo.FlagId,
+                        ud.NumeroSerie
+                    }).ToList();
+                
+                foreach(var reclamo in reclamosAsociados)
+                {
+                    var trReclamoDto = new TrReclamoDto
+                    {
+                        Nombre = reclamo.NombreTr,
+                        NumeroDocumento = reclamo.NumeroDocumento,
+                        Estado = reclamo.Estado,
+                        Flag = context.Flags
+                            .FirstOrDefault(f => f.Id == reclamo.FlagId)
+                    };
+                    etiqueta.ReclamosAsociados.Add(trReclamoDto);
+                }
+
                 if (etiqueta.Producto.TipoProducto is null)
                     return NotFound();
                 return Ok(etiqueta);
