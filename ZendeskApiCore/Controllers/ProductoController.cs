@@ -211,6 +211,44 @@ namespace ZendeskApiCore.Controllers
                 etiqueta.Producto = mapper.Map<ProductoDto>(producto);
                 etiqueta.Producto.TipoProducto = await context.TiposProducto
                     .FirstOrDefaultAsync(p => p.Codigo == etiquetaDto.ProductoTipo.Codigo);
+
+
+                var numeroSerie = etiqueta.Numero;
+                var lugarId = Guid.Parse("28295D31-34DE-441D-B329-DB9EDC4828A9");
+                var tipoTransaccionId = Guid.Parse("9917E6DE-2C20-408C-AA20-C4B183BDAED2");
+                var reclamosAsociados = (
+                    from item in context.ItemsReclamo
+                    where item.TipoTransaccionId == Guid.Parse("9917E6DE-2C20-408C-AA20-C4B183BDAED2")
+                    join reclamo in context.TrReclamos
+                        on item.PlaceOwnerId equals reclamo.Id into reclamoJoin
+                    from reclamo in reclamoJoin.DefaultIfEmpty()
+                    where reclamo.BoPlaceId == Guid.Parse("28295D31-34DE-441D-B329-DB9EDC4828A9")
+                    join ud in context.UdItemsReclamoSt
+                        on item.Id equals ud.BoOwnerId into udJoin
+                    from ud in udJoin.DefaultIfEmpty()
+                    where ud != null && ud.NumeroSerie == numeroSerie
+                    select new
+                    {
+                        item.NumeroDocumento,
+                        item.NombreTr,
+                        reclamo.Estado,
+                        reclamo.FlagId,
+                        ud.NumeroSerie
+                    }).ToList();
+                
+                foreach(var reclamo in reclamosAsociados)
+                {
+                    var trReclamoDto = new TrReclamoDto
+                    {
+                        Nombre = reclamo.NombreTr,
+                        NumeroDocumento = reclamo.NumeroDocumento,
+                        Estado = reclamo.Estado,
+                        Flag = context.Flags
+                            .FirstOrDefault(f => f.Id == reclamo.FlagId)
+                    };
+                    etiqueta.ReclamosAsociados.Add(trReclamoDto);
+                }
+
                 if (etiqueta.Producto.TipoProducto is null)
                     return NotFound();
                 return Ok(etiqueta);
@@ -221,5 +259,6 @@ namespace ZendeskApiCore.Controllers
                 return StatusCode(500, "Ocurrió un error inesperado. Contacte a sistemas.");
             }
         }
+        
     }
 }
