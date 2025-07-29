@@ -39,6 +39,7 @@ namespace ZendeskApiCore.Controllers
                 {
                     var itemsReclamo = await context.ItemsReclamoWebZendesk.Where(x => x.ReclamoId.Equals(reclamo.Id.ToString())).ToListAsync();
                     reclamo.ItemsReclamoWebZendesk = itemsReclamo;
+                    reclamo.ReclamoAsociado = GetReclamoAsociado(reclamo);
                 }
                 return Ok(reclamos);
             }
@@ -70,20 +71,12 @@ namespace ZendeskApiCore.Controllers
             {
                 if (id < 1)
                     return BadRequest("No se proporcionó un ID válido.");
-                var reclamoWebZendesk = await context.ReclamosWebZendesk.FindAsync(id);
-                if (reclamoWebZendesk is null)
+                var reclamo = await context.ReclamosWebZendesk.FindAsync(id);
+                if (reclamo is null)
                     return NotFound();
-                reclamoWebZendesk.ItemsReclamoWebZendesk = await context.ItemsReclamoWebZendesk.Where(x => x.ReclamoId.Equals(reclamoWebZendesk.Id.ToString())).ToListAsync();
-                var trReclamo = await context.TrReclamos
-                    .FirstOrDefaultAsync(x => x.NumeroDocumento.Equals(reclamoWebZendesk.NumeroReclamo.ToString()));
-                if (trReclamo is null)
-                    return Ok(reclamoWebZendesk);
-                var trReclamoDto = mapper.Map<TrReclamoDto>(trReclamo);
-                var flag = await context.Flags
-                    .FirstOrDefaultAsync(x => x.Id.Equals(trReclamo.FlagId));
-                trReclamoDto.Flag = flag;
-                reclamoWebZendesk.ReclamoAsociado = trReclamoDto;
-                return Ok(reclamoWebZendesk);
+                reclamo.ItemsReclamoWebZendesk = await context.ItemsReclamoWebZendesk.Where(x => x.ReclamoId.Equals(reclamo.Id.ToString())).ToListAsync();
+                reclamo.ReclamoAsociado = GetReclamoAsociado(reclamo);
+                return Ok(reclamo);
             }
             catch (Exception ex)
             {
@@ -270,6 +263,19 @@ namespace ZendeskApiCore.Controllers
         private bool ReclamoWebZendeskExists(int? id)
         {
             return context.ReclamosWebZendesk.Any(e => e.Id == id);
+        }
+
+        private TrReclamoDto GetReclamoAsociado(ReclamoWebZendesk reclamoWebZendesk)
+        {
+            var trReclamo = context.TrReclamos
+                .FirstOrDefault(x => x.NumeroDocumento.Equals(reclamoWebZendesk.NumeroReclamo.ToString()));
+            if (trReclamo is null)
+                return new TrReclamoDto();
+            var trReclamoDto = mapper.Map<TrReclamoDto>(trReclamo);
+            var flag = context.Flags
+                .FirstOrDefault(x => x.Id.Equals(trReclamo.FlagId));
+            trReclamoDto.Flag = flag;
+            return trReclamoDto;
         }
     }
 }
