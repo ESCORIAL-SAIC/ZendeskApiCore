@@ -89,6 +89,12 @@ public partial class ReclamoWebZendesk
     [Column("numeroreclamo")]
     [StringLength(60)]
     public string NumeroReclamo { get; set; }
+    [Column("telefono2")]
+    public string Telefono2 { get; set; }
+    [Column("fecha_compra")]
+    public DateTime FechaCompra { get; set; }
+    [Column("observaciones")]
+    public string Observaciones { get; set; }
     [NotMapped]
     public List<ItemReclamoWebZendesk> ItemsReclamoWebZendesk { get; set; }
     [NotMapped]
