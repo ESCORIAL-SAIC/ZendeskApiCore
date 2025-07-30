@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +9,7 @@ namespace ZendeskApiCore.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProblemaController(ESCORIALContext context, ILogger<LoginController> logger) : ControllerBase
+    public class ProblemaController(ESCORIALContext context, ILogger<LoginController> logger, IMapper mapper) : ControllerBase
     {
         // GET: api/Problema
         /// <summary>
@@ -23,14 +24,21 @@ namespace ZendeskApiCore.Controllers
         /// <response code="500">InternalServerError. Error interno del servidor. Comunicarse con sistemas.</response>
         [HttpGet]
         [Authorize(Policy = "RequireUserRole")]
-        public async Task<ActionResult<IEnumerable<Problema>>> GetProblema()
+        public async Task<ActionResult<IEnumerable<ProblemaDto>>> GetProblema()
         {
             try
             {
                 var problemas = await context.Problemas.ToListAsync();
                 if (problemas == null || problemas.IsNullOrEmpty())
                     return NotFound();
-                return Ok(problemas);
+                var problemasDto = new List<ProblemaDto>();
+                foreach (var problema in problemas)
+                {
+                    var problemaDto = mapper.Map<ProblemaDto>(problema);
+                    problemaDto.TipoProducto = await GetTipoProducto(problema.TipoProductoId);
+                    problemasDto.Add(problemaDto);
+                }
+                return Ok(problemasDto);
             }
             catch (Exception ex)
             {
@@ -54,7 +62,7 @@ namespace ZendeskApiCore.Controllers
         /// <response code="500">InternalServerError. Error interno del servidor. Comunicarse con sistemas.</response>
         [HttpGet("{id}")]
         [Authorize(Policy = "RequireUserRole")]
-        public async Task<ActionResult<Problema>> GetProblema(Guid id)
+        public async Task<ActionResult<ProblemaDto>> GetProblema(Guid id)
         {
             try
             {
@@ -63,6 +71,8 @@ namespace ZendeskApiCore.Controllers
                 var problema = await context.Problemas.FirstOrDefaultAsync(x => x.Id.Equals(id));
                 if (problema == null)
                     return NotFound();
+                var problemaDto = mapper.Map<ProblemaDto>(problema);
+                problemaDto.TipoProducto = await GetTipoProducto(problema.TipoProductoId);
                 return Ok(problema);
             }
             catch (Exception ex)
@@ -70,6 +80,17 @@ namespace ZendeskApiCore.Controllers
                 logger.LogError(ex, "Error en el método GetProblema(id)");
                 return StatusCode(500, "Ocurrió un error inesperado. Contacte a sistemas.");
             }
+        }
+
+        private async Task<TipoProducto?> GetTipoProducto(string tipoProductoId)
+        {
+            if (string.IsNullOrEmpty(tipoProductoId))
+                return null;
+            var id = Guid.Parse(tipoProductoId);
+            var tipoProducto = await context.TiposProducto.FirstOrDefaultAsync(t => t.Id == id);
+            if (tipoProducto is null)
+                return null;
+            return tipoProducto;
         }
     }
 }
