@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ZendeskApiCore.Models;
 
 [Keyless]
-public partial class Problema
+public partial class ProblemaDto
 {
     [Column("id")]
     public Guid? Id { get; set; }
@@ -21,7 +21,6 @@ public partial class Problema
     [Column("nombre")]
     [StringLength(120)]
     public string Nombre { get; set; }
-    [Column("tipoproducto_id")]
-    [StringLength(120)]
-    public string TipoProductoId { get; set; }
+    [NotMapped]
+    public TipoProducto TipoProducto { get; set; }
 }

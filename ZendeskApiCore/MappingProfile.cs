@@ -11,6 +11,8 @@ namespace ZendeskApiCore
             CreateMap<ItemReclamoWebZendeskDto, ItemReclamoWebZendesk>();
             CreateMap<Login, UserInfoDto>();
             CreateMap<Producto, ProductoDto>();
+            CreateMap<Problema, ProblemaDto>()
+                .ForMember(dest => dest.TipoProducto, opt => opt.Ignore());
             CreateMap<TrReclamo, TrReclamoDto>()
                 .ForMember(dest => dest.Flag, opt => opt.Ignore());
         }
