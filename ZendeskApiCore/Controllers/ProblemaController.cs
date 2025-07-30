@@ -32,10 +32,12 @@ namespace ZendeskApiCore.Controllers
                 if (problemas == null || problemas.IsNullOrEmpty())
                     return NotFound();
                 var problemasDto = new List<ProblemaDto>();
+                var tipos = await context.TiposProducto.ToListAsync();
                 foreach (var problema in problemas)
                 {
                     var problemaDto = mapper.Map<ProblemaDto>(problema);
-                    problemaDto.TipoProducto = await GetTipoProducto(problema.TipoProductoId);
+                    var id = Guid.Parse(problema.TipoProductoId);
+                    problemaDto.TipoProducto = tipos.FirstOrDefault(t => t.Id == id);
                     problemasDto.Add(problemaDto);
                 }
                 return Ok(problemasDto);
