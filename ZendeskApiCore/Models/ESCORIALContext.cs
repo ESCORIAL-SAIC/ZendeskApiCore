@@ -36,6 +36,7 @@ public partial class ESCORIALContext : DbContext
     public virtual DbSet<ReclamoWebZendesk> ReclamosWebZendesk { get; set; }
     
     public virtual DbSet<TipoProducto> TiposProducto { get; set; }
+    public virtual DbSet<Rubro> Rubros{ get; set; }
 
     public virtual DbSet<Etiqueta> Etiquetas { get; set; }
     
@@ -116,7 +117,12 @@ public partial class ESCORIALContext : DbContext
         modelBuilder.Entity<ItemReclamo>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("itemreclamo_pkey");
-        }); 
+        });
+
+        modelBuilder.Entity<Rubro>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("rubro_pkey");
+        });
 
         modelBuilder.Entity<UdItemReclamoSt>(entity =>
         {

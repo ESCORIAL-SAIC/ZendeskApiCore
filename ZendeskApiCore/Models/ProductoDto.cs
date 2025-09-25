@@ -10,4 +10,6 @@ public class ProductoDto
     public string Descripcion { get; set; }
     [NotMapped]
     public TipoProducto TipoProducto { get; set; }
+    [NotMapped]
+    public Rubro Rubro { get; set; }
 }
