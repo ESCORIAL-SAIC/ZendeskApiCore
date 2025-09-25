@@ -216,14 +216,15 @@ namespace ZendeskApiCore.Controllers
                 var numeroSerie = etiqueta.Numero;
                 var lugarId = Guid.Parse("28295D31-34DE-441D-B329-DB9EDC4828A9");
                 var tipoTransaccionId = Guid.Parse("9917E6DE-2C20-408C-AA20-C4B183BDAED2");
+
                 var reclamosAsociados = (
                     from item in context.ItemsReclamo
-                    where item.TipoTransaccionId == Guid.Parse("9917E6DE-2C20-408C-AA20-C4B183BDAED2")
+                    where item.TipoTransaccionId == Guid.Parse("9A3FA77A-83EE-49FD-A05D-C2AF4F31DD94")
                     join reclamo in context.TrReclamos
                         on item.PlaceOwnerId equals reclamo.Id into reclamoJoin
                     from reclamo in reclamoJoin.DefaultIfEmpty()
                     where reclamo.BoPlaceId == Guid.Parse("28295D31-34DE-441D-B329-DB9EDC4828A9")
-                    join ud in context.UdItemsReclamoSt
+                    join ud in context.UdItemsReclamoNuevo
                         on item.Id equals ud.BoOwnerId into udJoin
                     from ud in udJoin.DefaultIfEmpty()
                     where ud != null && ud.NumeroSerie == numeroSerie
@@ -235,8 +236,8 @@ namespace ZendeskApiCore.Controllers
                         reclamo.FlagId,
                         ud.NumeroSerie
                     }).ToList();
-                
-                foreach(var reclamo in reclamosAsociados)
+
+                foreach (var reclamo in reclamosAsociados)
                 {
                     var trReclamoDto = new TrReclamoDto
                     {
