@@ -30,25 +30,21 @@ namespace ZendeskApiCore.Controllers
         {
             try
             {
-                var productos = await context.Productos
-                .Where(producto => producto.ActiveStatus == 0)
-                .Join(context.Segmentos,
-                    producto => producto.SegmentoId,
-                    segmento => segmento.Id,
-                    (producto, segmento) => new { producto, segmento })
-                .Join(context.TiposProducto,
-                    productoSegmento => productoSegmento.segmento.Segmento1Id,
-                    tipoProducto => tipoProducto.Id,
-                    (productoSegmento, tipoProducto) => new { productoSegmento, tipoProducto })
-                .Select(productoSegmentoTipo =>
-                    new ProductoDto
+                var productos = await (
+                    from p in context.Productos
+                    join s in context.Segmentos on p.SegmentoId equals s.Id
+                    join t in context.TiposProducto on s.Segmento1Id equals t.Id
+                    join r in context.Rubros on p.RubroId equals r.Id
+                    where p.ActiveStatus == 0
+                    select new ProductoDto
                     {
-                        Id = productoSegmentoTipo.productoSegmento.producto.Id,
-                        Codigo = productoSegmentoTipo.productoSegmento.producto.Codigo,
-                        Descripcion = productoSegmentoTipo.productoSegmento.producto.Descripcion,
-                        TipoProducto = productoSegmentoTipo.tipoProducto,
-                    })
-                .ToListAsync();
+                        Id = p.Id,
+                        Codigo = p.Codigo,
+                        Descripcion = p.Descripcion,
+                        TipoProducto = t,
+                        Rubro = r
+                    }
+                ).ToListAsync();
                 if (productos is null || productos.IsNullOrEmpty())
                     return NotFound();
                 return Ok(productos);
@@ -81,26 +77,21 @@ namespace ZendeskApiCore.Controllers
             {
                 if (id == Guid.Empty)
                     return BadRequest("No se proporcionó un ID válido.");
-                var producto = await context.Productos
-                    .Where(producto => producto.ActiveStatus == 0
-                                       && producto.Id == id)
-                    .Join(context.Segmentos,
-                        producto => producto.SegmentoId,
-                        segmento => segmento.Id,
-                        (producto, segmento) => new { producto, segmento })
-                    .Join(context.TiposProducto,
-                        productoSegmento => productoSegmento.segmento.Segmento1Id,
-                        tipoProducto => tipoProducto.Id,
-                        (productoSegmento, tipoProducto) => new { productoSegmento, tipoProducto })
-                    .Select(productoSegmentoTipo =>
-                        new ProductoDto
-                        {
-                            Id = productoSegmentoTipo.productoSegmento.producto.Id,
-                            Codigo = productoSegmentoTipo.productoSegmento.producto.Codigo,
-                            Descripcion = productoSegmentoTipo.productoSegmento.producto.Descripcion,
-                            TipoProducto = productoSegmentoTipo.tipoProducto,
-                        })
-                    .FirstOrDefaultAsync();
+                var producto = await (
+                    from p in context.Productos
+                    join s in context.Segmentos on p.SegmentoId equals s.Id
+                    join t in context.TiposProducto on s.Segmento1Id equals t.Id
+                    join r in context.Rubros on p.RubroId equals r.Id
+                    where p.ActiveStatus == 0 && p.Id == id
+                    select new ProductoDto
+                    {
+                        Id = p.Id,
+                        Codigo = p.Codigo,
+                        Descripcion = p.Descripcion,
+                        TipoProducto = t,
+                        Rubro = r
+                    }
+                ).FirstOrDefaultAsync();
                 if (producto is null)
                     return NotFound();
                 return Ok(producto);
@@ -133,26 +124,21 @@ namespace ZendeskApiCore.Controllers
             {
                 if (idTipo == Guid.Empty)
                     return BadRequest("No se proporcionó un ID válido.");
-                var productos = await context.Productos
-                    .Where(producto => producto.ActiveStatus == 0)
-                    .Join(context.Segmentos,
-                        producto => producto.SegmentoId,
-                        segmento => segmento.Id,
-                        (producto, segmento) => new { producto, segmento })
-                    .Join(context.TiposProducto,
-                        productoSegmento => productoSegmento.segmento.Segmento1Id,
-                        tipoProducto => tipoProducto.Id,
-                        (productoSegmento, tipoProducto) => new { productoSegmento, tipoProducto })
-                    .Select(productoSegmentoTipo =>
-                        new ProductoDto
-                        {
-                            Id = productoSegmentoTipo.productoSegmento.producto.Id,
-                            Codigo = productoSegmentoTipo.productoSegmento.producto.Codigo,
-                            Descripcion = productoSegmentoTipo.productoSegmento.producto.Descripcion,
-                            TipoProducto = productoSegmentoTipo.tipoProducto,
-                        })
-                    .Where(producto => producto.TipoProducto.Id == idTipo)
-                    .ToListAsync();
+                var productos = await (
+                    from p in context.Productos
+                    join s in context.Segmentos on p.SegmentoId equals s.Id
+                    join t in context.TiposProducto on s.Segmento1Id equals t.Id
+                    join r in context.Rubros on p.RubroId equals r.Id
+                    where p.ActiveStatus == 0 && t.Id == idTipo
+                    select new ProductoDto
+                    {
+                        Id = p.Id,
+                        Codigo = p.Codigo,
+                        Descripcion = p.Descripcion,
+                        TipoProducto = t,
+                        Rubro = r
+                    }
+                ).ToListAsync();
                 if (productos is null || productos.IsNullOrEmpty())
                     return NotFound();
                 return Ok(productos);
@@ -211,7 +197,8 @@ namespace ZendeskApiCore.Controllers
                 etiqueta.Producto = mapper.Map<ProductoDto>(producto);
                 etiqueta.Producto.TipoProducto = await context.TiposProducto
                     .FirstOrDefaultAsync(p => p.Codigo == etiquetaDto.ProductoTipo.Codigo);
-
+                etiqueta.Producto.Rubro = await context.Rubros
+                    .FirstOrDefaultAsync(r => r.Id == producto.RubroId);
 
                 var numeroSerie = etiqueta.Numero;
                 var lugarId = Guid.Parse("28295D31-34DE-441D-B329-DB9EDC4828A9");
