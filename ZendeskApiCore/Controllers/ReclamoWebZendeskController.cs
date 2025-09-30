@@ -265,8 +265,10 @@ namespace ZendeskApiCore.Controllers
             return context.ReclamosWebZendesk.Any(e => e.Id == id);
         }
 
-        private TrReclamoDto GetReclamoAsociado(ReclamoWebZendesk reclamoWebZendesk)
+        private TrReclamoDto? GetReclamoAsociado(ReclamoWebZendesk reclamoWebZendesk)
         {
+            if (string.IsNullOrEmpty(reclamoWebZendesk.NumeroReclamo))
+                return null;
             var trReclamo = context.TrReclamos
                 .FirstOrDefault(x => x.NumeroDocumento.Equals(reclamoWebZendesk.NumeroReclamo.ToString()));
             if (trReclamo is null)
