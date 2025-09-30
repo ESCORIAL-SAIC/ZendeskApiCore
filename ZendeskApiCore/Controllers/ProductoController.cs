@@ -204,7 +204,7 @@ namespace ZendeskApiCore.Controllers
                 var lugarId = Guid.Parse("28295D31-34DE-441D-B329-DB9EDC4828A9");
                 var tipoTransaccionId = Guid.Parse("9917E6DE-2C20-408C-AA20-C4B183BDAED2");
 
-                var reclamosAsociados = (
+                var reclamosAsociadosList = await (
                     from item in context.ItemsReclamo
                     where item.TipoTransaccionId == Guid.Parse("9A3FA77A-83EE-49FD-A05D-C2AF4F31DD94")
                     join reclamo in context.TrReclamos
@@ -215,24 +215,28 @@ namespace ZendeskApiCore.Controllers
                         on item.Id equals ud.BoOwnerId into udJoin
                     from ud in udJoin.DefaultIfEmpty()
                     where ud != null && ud.NumeroSerie == numeroSerie
+                    join flag in context.Flags
+                        on reclamo.FlagId equals flag.Id into flagJoin
+                    from flag in flagJoin.DefaultIfEmpty()
                     select new
                     {
                         item.NumeroDocumento,
                         item.NombreTr,
                         reclamo.Estado,
-                        reclamo.FlagId,
+                        Flag = flag,
                         ud.NumeroSerie
-                    }).ToList();
+                    })
+                    .Distinct()
+                    .ToListAsync();
 
-                foreach (var reclamo in reclamosAsociados)
+                foreach (var reclamo in reclamosAsociadosList)
                 {
                     var trReclamoDto = new TrReclamoDto
                     {
                         Nombre = reclamo.NombreTr,
                         NumeroDocumento = reclamo.NumeroDocumento,
                         Estado = reclamo.Estado,
-                        Flag = context.Flags
-                            .FirstOrDefault(f => f.Id == reclamo.FlagId)
+                        Flag = reclamo.Flag
                     };
                     etiqueta.ReclamosAsociados.Add(trReclamoDto);
                 }
