@@ -92,12 +92,12 @@ public partial class ReclamoWebZendesk
     [Column("telefono2")]
     public string Telefono2 { get; set; }
     [Column("fecha_compra")]
-    public DateTime FechaCompra { get; set; }
+    public DateTime? FechaCompra { get; set; }
     [Column("observaciones")]
     public string Observaciones { get; set; }
     [NotMapped]
     public List<ItemReclamoWebZendesk> ItemsReclamoWebZendesk { get; set; }
     [NotMapped]
-    public TrReclamoDto ReclamoAsociado { get; set; } = new TrReclamoDto();
+    public TrReclamoDto? ReclamoAsociado { get; set; } = new TrReclamoDto();
 
 }

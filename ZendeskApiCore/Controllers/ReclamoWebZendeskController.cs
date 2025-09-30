@@ -32,15 +32,55 @@ namespace ZendeskApiCore.Controllers
         {
             try
             {
-                var reclamos = await context.ReclamosWebZendesk.ToListAsync();
+                var reclamos = await
+                    (from rwz in context.ReclamosWebZendesk
+                    join r in context.TrReclamos
+                        on rwz.NumeroReclamo equals r.NumeroDocumento into rwzr
+                    from r in rwzr.DefaultIfEmpty()
+                    join f in context.Flags
+                        on r.FlagId equals f.Id into rf
+                    from f in rf.DefaultIfEmpty()
+                    select new ReclamoWebZendesk
+                    {
+                        Id = rwz.Id,
+                        ApellidoNombre = rwz.ApellidoNombre,
+                        Dni = rwz.Dni,
+                        Direccion = rwz.Direccion,
+                        EntreCalles = rwz.EntreCalles,
+                        LocalidadId = rwz.LocalidadId,
+                        CodigoPostal = rwz.CodigoPostal,
+                        Mail = rwz.Mail,
+                        Telefonos = rwz.Telefonos,
+                        TecnicoTipoId = rwz.TecnicoTipoId,
+                        TecnicoId = rwz.TecnicoId,
+                        ProductoTipoId = rwz.ProductoTipoId,
+                        ProductoId = rwz.ProductoId,
+                        CreatedAt = rwz.CreatedAt,
+                        UserCreated = rwz.UserCreated,
+                        Garantia = rwz.Garantia,
+                        CasaVendedora = rwz.CasaVendedora,
+                        Cargado = rwz.Cargado,
+                        FechaHoraIngresoPagina = rwz.FechaHoraIngresoPagina,
+                        FechaHoraIngresoCalipso = rwz.FechaHoraIngresoCalipso,
+                        NumeroReclamo = rwz.NumeroReclamo,
+                        Telefono2 = rwz.Telefono2,
+                        FechaCompra = rwz.FechaCompra,
+                        Observaciones = rwz.Observaciones,
+
+                        ItemsReclamoWebZendesk = context.ItemsReclamoWebZendesk
+                            .Where(x => x.ReclamoId == rwz.Id.ToString())
+                            .ToList(),
+
+                        ReclamoAsociado = r == null ? null : new TrReclamoDto
+                        {
+                            NumeroDocumento = r.NumeroDocumento,
+                            Estado = r.Estado,
+                            Nombre = r.Nombre,
+                            Flag = f
+                        }
+                    }).ToListAsync();
                 if (reclamos is null || reclamos.IsNullOrEmpty())
                     return NotFound();
-                foreach (var reclamo in reclamos)
-                {
-                    var itemsReclamo = await context.ItemsReclamoWebZendesk.Where(x => x.ReclamoId.Equals(reclamo.Id.ToString())).ToListAsync();
-                    reclamo.ItemsReclamoWebZendesk = itemsReclamo;
-                    reclamo.ReclamoAsociado = GetReclamoAsociado(reclamo);
-                }
                 return Ok(reclamos);
             }
             catch (Exception ex)
@@ -265,8 +305,10 @@ namespace ZendeskApiCore.Controllers
             return context.ReclamosWebZendesk.Any(e => e.Id == id);
         }
 
-        private TrReclamoDto GetReclamoAsociado(ReclamoWebZendesk reclamoWebZendesk)
+        private TrReclamoDto? GetReclamoAsociado(ReclamoWebZendesk reclamoWebZendesk)
         {
+            if (string.IsNullOrEmpty(reclamoWebZendesk.NumeroReclamo))
+                return null;
             var trReclamo = context.TrReclamos
                 .FirstOrDefault(x => x.NumeroDocumento.Equals(reclamoWebZendesk.NumeroReclamo.ToString()));
             if (trReclamo is null)
