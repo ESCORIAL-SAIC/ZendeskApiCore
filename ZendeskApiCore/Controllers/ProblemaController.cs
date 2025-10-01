@@ -93,15 +93,5 @@ namespace ZendeskApiCore.Controllers
                 return StatusCode(500, "Ocurrió un error inesperado. Contacte a sistemas.");
             }
         }
-
-        private async Task<Rubro?> GetRubro(Guid? rubroId)
-        {
-            if (rubroId is null)
-                return null;
-            var rubro = await context.Rubros.FirstOrDefaultAsync(t => t.Id == rubroId);
-            if (rubro is null)
-                return null;
-            return rubro;
-        }
     }
 }
