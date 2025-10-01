@@ -70,13 +70,21 @@ namespace ZendeskApiCore.Controllers
         {
             try
             {
-                if (id == Guid.Empty)
-                    return BadRequest("No se proporcionó un ID válido.");
-                var problema = await context.Problemas.FirstOrDefaultAsync(x => x.Id.Equals(id));
+                var problema = await
+                    (from p in context.Problemas
+                     join r in context.Rubros on p.RubroId equals r.Id into pr
+                     from r in pr.DefaultIfEmpty()
+                     where p.Id == id
+                     select new ProblemaDto
+                     {
+                         Id = p.Id,
+                         Codigo = p.Codigo,
+                         Nombre = p.Nombre,
+                         Rubro = r
+                     })
+                    .FirstOrDefaultAsync();
                 if (problema == null)
                     return NotFound();
-                var problemaDto = mapper.Map<ProblemaDto>(problema);
-                problemaDto.Rubro = await GetRubro(problema.RubroId);
                 return Ok(problema);
             }
             catch (Exception ex)
