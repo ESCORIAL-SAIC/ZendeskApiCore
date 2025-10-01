@@ -11,6 +11,6 @@ namespace ZendeskApiCore.Models
         [Column("id")]
         public Guid Id { get; set; }
         [Column("nombrerubro")]
-        public string NombreRubro { get; set; }
+        public string Nombre { get; set; }
     }
 }

@@ -32,12 +32,11 @@ namespace ZendeskApiCore.Controllers
                 if (problemas == null || problemas.IsNullOrEmpty())
                     return NotFound();
                 var problemasDto = new List<ProblemaDto>();
-                var tipos = await context.TiposProducto.ToListAsync();
+                var rubros = await context.Rubros.ToListAsync();
                 foreach (var problema in problemas)
                 {
                     var problemaDto = mapper.Map<ProblemaDto>(problema);
-                    var id = Guid.Parse(problema.TipoProductoId);
-                    problemaDto.TipoProducto = tipos.FirstOrDefault(t => t.Id == id);
+                    problemaDto.Rubro = rubros.FirstOrDefault(t => t.Id == problema.RubroId);
                     problemasDto.Add(problemaDto);
                 }
                 return Ok(problemasDto);
@@ -74,7 +73,7 @@ namespace ZendeskApiCore.Controllers
                 if (problema == null)
                     return NotFound();
                 var problemaDto = mapper.Map<ProblemaDto>(problema);
-                problemaDto.TipoProducto = await GetTipoProducto(problema.TipoProductoId);
+                problemaDto.Rubro = await GetRubro(problema.RubroId);
                 return Ok(problema);
             }
             catch (Exception ex)
@@ -84,15 +83,14 @@ namespace ZendeskApiCore.Controllers
             }
         }
 
-        private async Task<TipoProducto?> GetTipoProducto(string tipoProductoId)
+        private async Task<Rubro?> GetRubro(Guid? rubroId)
         {
-            if (string.IsNullOrEmpty(tipoProductoId))
+            if (rubroId is null)
                 return null;
-            var id = Guid.Parse(tipoProductoId);
-            var tipoProducto = await context.TiposProducto.FirstOrDefaultAsync(t => t.Id == id);
-            if (tipoProducto is null)
+            var rubro = await context.Rubros.FirstOrDefaultAsync(t => t.Id == rubroId);
+            if (rubro is null)
                 return null;
-            return tipoProducto;
+            return rubro;
         }
     }
 }
