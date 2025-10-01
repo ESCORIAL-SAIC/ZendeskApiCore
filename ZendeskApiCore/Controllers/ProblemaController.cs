@@ -70,6 +70,8 @@ namespace ZendeskApiCore.Controllers
         {
             try
             {
+                if (id == Guid.Empty)
+                    return BadRequest("El Id proporcionado no es válido.");
                 var problema = await
                     (from p in context.Problemas
                      join r in context.Rubros on p.RubroId equals r.Id into pr
