@@ -22,5 +22,5 @@ public partial class ProblemaDto
     [StringLength(120)]
     public string Nombre { get; set; }
     [NotMapped]
-    public TipoProducto TipoProducto { get; set; }
+    public Rubro Rubro{ get; set; }
 }

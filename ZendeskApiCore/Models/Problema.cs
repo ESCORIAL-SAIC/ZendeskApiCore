@@ -21,7 +21,7 @@ public partial class Problema
     [Column("nombre")]
     [StringLength(120)]
     public string Nombre { get; set; }
-    [Column("tipoproducto_id")]
+    [Column("rubro_id")]
     [StringLength(120)]
-    public string TipoProductoId { get; set; }
+    public Guid RubroId { get; set; }
 }
