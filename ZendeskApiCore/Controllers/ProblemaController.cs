@@ -28,18 +28,21 @@ namespace ZendeskApiCore.Controllers
         {
             try
             {
-                var problemas = await context.Problemas.ToListAsync();
-                if (problemas == null || problemas.IsNullOrEmpty())
+                var problemas = await
+                    (from p in context.Problemas
+                    join r in context.Rubros on p.RubroId equals r.Id into pr
+                    from r in pr.DefaultIfEmpty()
+                    select new ProblemaDto
+                    {
+                        Id = p.Id,
+                        Codigo = p.Codigo,
+                        Nombre = p.Nombre,
+                        Rubro = r
+                    })
+                    .ToListAsync();
+                if (problemas == null || problemas.Count == 0)
                     return NotFound();
-                var problemasDto = new List<ProblemaDto>();
-                var rubros = await context.Rubros.ToListAsync();
-                foreach (var problema in problemas)
-                {
-                    var problemaDto = mapper.Map<ProblemaDto>(problema);
-                    problemaDto.Rubro = rubros.FirstOrDefault(t => t.Id == problema.RubroId);
-                    problemasDto.Add(problemaDto);
-                }
-                return Ok(problemasDto);
+                return Ok(problemas);
             }
             catch (Exception ex)
             {
