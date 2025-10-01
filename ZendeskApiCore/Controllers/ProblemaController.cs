@@ -9,7 +9,7 @@ namespace ZendeskApiCore.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProblemaController(ESCORIALContext context, ILogger<LoginController> logger, IMapper mapper) : ControllerBase
+    public class ProblemaController(ESCORIALContext context, ILogger<LoginController> logger) : ControllerBase
     {
         // GET: api/Problema
         /// <summary>
