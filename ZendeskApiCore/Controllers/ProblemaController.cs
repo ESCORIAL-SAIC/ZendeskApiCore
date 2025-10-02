@@ -9,7 +9,7 @@ namespace ZendeskApiCore.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProblemaController(ESCORIALContext context, ILogger<LoginController> logger, IMapper mapper) : ControllerBase
+    public class ProblemaController(ESCORIALContext context, ILogger<LoginController> logger) : ControllerBase
     {
         // GET: api/Problema
         /// <summary>
@@ -28,18 +28,21 @@ namespace ZendeskApiCore.Controllers
         {
             try
             {
-                var problemas = await context.Problemas.ToListAsync();
-                if (problemas == null || problemas.IsNullOrEmpty())
+                var problemas = await
+                    (from p in context.Problemas
+                    join r in context.Rubros on p.RubroId equals r.Id into pr
+                    from r in pr.DefaultIfEmpty()
+                    select new ProblemaDto
+                    {
+                        Id = p.Id,
+                        Codigo = p.Codigo,
+                        Nombre = p.Nombre,
+                        Rubro = r
+                    })
+                    .ToListAsync();
+                if (problemas == null || problemas.Count == 0)
                     return NotFound();
-                var problemasDto = new List<ProblemaDto>();
-                var rubros = await context.Rubros.ToListAsync();
-                foreach (var problema in problemas)
-                {
-                    var problemaDto = mapper.Map<ProblemaDto>(problema);
-                    problemaDto.Rubro = rubros.FirstOrDefault(t => t.Id == problema.RubroId);
-                    problemasDto.Add(problemaDto);
-                }
-                return Ok(problemasDto);
+                return Ok(problemas);
             }
             catch (Exception ex)
             {
@@ -68,12 +71,22 @@ namespace ZendeskApiCore.Controllers
             try
             {
                 if (id == Guid.Empty)
-                    return BadRequest("No se proporcionó un ID válido.");
-                var problema = await context.Problemas.FirstOrDefaultAsync(x => x.Id.Equals(id));
+                    return BadRequest("El Id proporcionado no es válido.");
+                var problema = await
+                    (from p in context.Problemas
+                     join r in context.Rubros on p.RubroId equals r.Id into pr
+                     from r in pr.DefaultIfEmpty()
+                     where p.Id == id
+                     select new ProblemaDto
+                     {
+                         Id = p.Id,
+                         Codigo = p.Codigo,
+                         Nombre = p.Nombre,
+                         Rubro = r
+                     })
+                    .FirstOrDefaultAsync();
                 if (problema == null)
                     return NotFound();
-                var problemaDto = mapper.Map<ProblemaDto>(problema);
-                problemaDto.Rubro = await GetRubro(problema.RubroId);
                 return Ok(problema);
             }
             catch (Exception ex)
@@ -81,16 +94,6 @@ namespace ZendeskApiCore.Controllers
                 logger.LogError(ex, "Error en el método GetProblema(id)");
                 return StatusCode(500, "Ocurrió un error inesperado. Contacte a sistemas.");
             }
-        }
-
-        private async Task<Rubro?> GetRubro(Guid? rubroId)
-        {
-            if (rubroId is null)
-                return null;
-            var rubro = await context.Rubros.FirstOrDefaultAsync(t => t.Id == rubroId);
-            if (rubro is null)
-                return null;
-            return rubro;
         }
     }
 }
