@@ -95,6 +95,8 @@ public partial class ReclamoWebZendesk
     public DateTime? FechaCompra { get; set; }
     [Column("observaciones")]
     public string Observaciones { get; set; }
+    [Column("provincia_id")]
+    public string ProvinciaId { get; set; }
     [NotMapped]
     public List<ItemReclamoWebZendesk> ItemsReclamoWebZendesk { get; set; }
     [NotMapped]
