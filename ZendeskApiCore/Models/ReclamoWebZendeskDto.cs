@@ -65,4 +65,5 @@ public partial class ReclamoWebZendeskDto
     public DateTime FechaCompra { get; set; }
     public string? Observaciones { get; set; }
     public string? CasaVendedora {  get; set; }
+    public string? ProvinciaId { get; set; }
 }
