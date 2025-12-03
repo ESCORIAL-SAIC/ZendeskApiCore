@@ -66,7 +66,7 @@ namespace ZendeskApiCore.Controllers
                         Telefono2 = rwz.Telefono2,
                         FechaCompra = rwz.FechaCompra,
                         Observaciones = rwz.Observaciones,
-
+                        ProvinciaId = rwz.ProvinciaId,
                         ItemsReclamoWebZendesk = context.ItemsReclamoWebZendesk
                             .Where(x => x.ReclamoId == rwz.Id.ToString())
                             .ToList(),
